@@ -1,13 +1,19 @@
-"""Командная строка ассемблера первого этапа."""
+"""Command-line assembler for the educational virtual machine."""
 
 import argparse
 
 from src.assembler import read_program
+from src.encoder import (
+    encode_instruction,
+    encode_program,
+    format_bytes,
+    save_program,
+)
 
 
 def main():
-    """Прочитать программу и показать поля в тестовом режиме."""
-    parser = argparse.ArgumentParser(description="Ассемблер УВМ")
+    """Assemble YAML, write binary code, and show test bytes."""
+    parser = argparse.ArgumentParser(description="UVM assembler")
     parser.add_argument("--source", required=True)
     parser.add_argument("--output", required=True)
     parser.add_argument("--test", action="store_true")
@@ -15,17 +21,15 @@ def main():
 
     try:
         program = read_program(args.source)
-    except ValueError as error:
+        save_program(args.output, encode_program(program))
+    except (ValueError, OSError) as error:
         parser.error(str(error))
 
+    print(f"Assembled instructions: {len(program)}")
     if args.test:
-        for number, command in enumerate(program, start=1):
-            fields = f"A={command.field_a}"
-            if command.field_b is not None:
-                fields += f", B={command.field_b}"
-            print(f"{number}. {command.name}: {fields}")
-    else:
-        print(f"Разобрано команд: {len(program)}")
+        for command in program:
+            data = encode_instruction(command)
+            print(f"{command.name}: {format_bytes(data)}")
 
 
 if __name__ == "__main__":
